@@ -23,20 +23,24 @@ CRGB leds[NUM_LEDS];
 int state          =  0;
 int maxState       =  3;
 
+void (*buttonLeftFunc)(void);
+void (*buttonMiddleFunc)(void);
+void (*buttonRightFunc)(void);
+
 // One button vars
-OneButton btn_left = OneButton(
+OneButton buttonLeft = OneButton(
   BUTTON_LEFT,
   false,
   false
 );
 
-OneButton btn_middle = OneButton(
+OneButton buttonMiddle = OneButton(
   BUTTON_MIDDLE,
   false,
   false
 );
 
-OneButton btn_right = OneButton(
+OneButton buttonRight = OneButton(
   BUTTON_RIGHT,
   false,
   false
@@ -116,26 +120,50 @@ static void comboC() {
 // Single click buttons
 static void buttonLeftClick() {
   Serial.println("Left Button Pressed");
-  if(state == 0) comboVirtualDesktopLeft();
-  if(state == 1) comboCopy();
-  if(state == 2) comboUndo();
-  if(state == 3) comboZ();
+  buttonLeftFunc();
+  // if(state == 0) comboVirtualDesktopLeft();
+  // if(state == 1) comboCopy();
+  // if(state == 2) comboUndo();
+  // if(state == 3) comboZ();
 }
 
 static void buttonMiddleClick() {
   Serial.println("Middle Button Pressed");
-  if(state == 0) comboTaskView();
-  if(state == 1) comboCut();
-  if(state == 2) comboRedo();
-  if(state == 3) comboX();
+  buttonMiddleFunc();
+  // if(state == 0) comboTaskView();
+  // if(state == 1) comboCut();
+  // if(state == 2) comboRedo();
+  // if(state == 3) comboX();
 }
 
 static void buttonRightClick() {
   Serial.println("Right Button Pressed");
-  if(state == 0) comboVirtualDesktopRight();
-  if(state == 1) comboPaste();
-  if(state == 2) comboCut();
-  if(state == 3) comboC();
+  buttonRightFunc();
+  // if(state == 0) comboVirtualDesktopRight();
+  // if(state == 1) comboPaste();
+  // if(state == 2) comboCut();
+  // if(state == 3) comboC();
+}
+
+// Assigns functions to buttons
+static void getFunctions() {
+  if(state == 0) {
+    buttonLeftFunc = &comboVirtualDesktopLeft;
+    buttonMiddleFunc = &comboTaskView;
+    buttonRightFunc = &comboVirtualDesktopRight;
+  } else if (state == 1) {
+    buttonLeftFunc = &comboCopy;
+    buttonMiddleFunc = &comboCut;
+    buttonRightFunc = &comboPaste;
+  } else if (state == 2) {
+    buttonLeftFunc = &comboUndo;
+    buttonMiddleFunc = &comboRedo;
+    buttonRightFunc = &comboCut;
+  } else if (state == 3) {
+    buttonLeftFunc = &comboZ;
+    buttonMiddleFunc = &comboX;
+    buttonRightFunc = &comboC;
+  }
 }
 
 // Long Click buttons
@@ -144,6 +172,8 @@ static void buttonLeftLongClick() {
   if(state < 0) {
     state = maxState;
   }
+  // Update button functions
+  getFunctions();
 }
 
 static void buttonRightLongClick() {
@@ -151,6 +181,8 @@ static void buttonRightLongClick() {
   if(state > maxState) {
     state = 0;
   }
+  // Update button functions
+  getFunctions();
 }
 
 static void checkState() {
@@ -160,16 +192,17 @@ static void checkState() {
   if(state == 3) leds[0] = CRGB::Plaid;
 }
 
+
 // Main
 void setup() {
   Serial.begin(9600);
   
   // Setup buttons
-  btn_left.attachClick(buttonLeftClick);
-  btn_middle.attachClick(buttonMiddleClick);
-  btn_left.attachLongPressStart(buttonLeftLongClick);
-  btn_right.attachLongPressStart(buttonRightLongClick);
-  btn_right.attachClick(buttonRightClick);
+  buttonLeft.attachClick(buttonLeftClick);
+  buttonMiddle.attachClick(buttonMiddleClick);
+  buttonLeft.attachLongPressStart(buttonLeftLongClick);
+  buttonRight.attachLongPressStart(buttonRightLongClick);
+  buttonRight.attachClick(buttonRightClick);
 
   // Setup FastLED
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
@@ -184,6 +217,7 @@ void setup() {
   pinMode(BUTTON_RIGHT, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
 
+  getFunctions();
   Keyboard.begin();
   
   Serial.println("Begin");
@@ -191,9 +225,9 @@ void setup() {
 
 void loop() {
   // Update buttons
-  btn_left.tick();
-  btn_middle.tick();
-  btn_right.tick();
+  buttonLeft.tick();
+  buttonMiddle.tick();
+  buttonRight.tick();
 
   checkState();
   FastLED.show();
